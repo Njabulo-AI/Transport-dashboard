@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Transport Claims Dashboard</title>
+  <style>
+    body {
+      font-family: Arial;
+      background-color: #0f172a;
+      color: white;
+      padding: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #1e293b;
+    }
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #334155;
+      text-align: left;
+    }
+    th {
+      background-color: #020617;
+    }
+.high { color: red; font-weight: bold; background-color: #3f1d1d; }
+.medium { color: orange; font-weight: bold; background-color: #3f331d; }
+.low { color: lightgreen; font-weight: bold; background-color: #1d3f2a; }
+    .medium { color: orange; font-weight: bold; }
+    .low { color: lightgreen; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<h2>AI Transport Expense Verification Dashboard</h2>
+<p>Automatically flags fare anomalies and missing claims for review</p>
+<div id="summary" style="margin-bottom: 20px;"></div>
+<button onclick="filterHighRisk()">Show High Risk Only</button>
+<table>
+  <tr>
+    <th>Employee</th>
+    <th>Route</th>
+    <th>Claimed</th>
+    <th>Expected</th>
+    <th>Issue</th>
+    <th>Severity</th>
+    <th>Action</th>
+  </tr>
+
+<tbody id="table-body"></tbody>
+</table>
+<script>
+const claims = [
+  {
+    employee: "Employee A",
+    route: "Home → Office",
+    claimed: 500,
+    expected: 300
+  },
+  {
+    employee: "Employee B",
+    route: "Office → Client",
+    claimed: 0,
+    expected: 200
+  },
+  {
+    employee: "Employee C",
+    route: "Home → Office",
+    claimed: 300,
+    expected: 300
+  },
+{
+  employee: "Employee D",
+  route: "Home → Client",
+  claimed: 150,
+  expected: 300
+}
+];
+let showingHighOnly = false;
+
+function filterHighRisk() {
+  const rows = document.querySelectorAll("table tr");
+  const button = document.querySelector("button");
+
+  showingHighOnly = !showingHighOnly;
+
+  rows.forEach((row, index) => {
+    if (index === 0) return;
+
+    if (showingHighOnly) {
+      if (!row.classList.contains("high-row")) {
+        row.style.display = "none";
+      }
+    } else {
+      row.style.display = "";
+    }
+  });
+
+  // 👇 Change button text
+  button.textContent = showingHighOnly 
+    ? "Show All Claims" 
+    : "Show High Risk Only";
+}
+function analyzeClaim(claim) {
+  const tolerance = 50;
+
+  let issue = "No Issue";
+  let severity = "Low";
+  let action = "Approve";
+
+  // Missing Trip
+  if (claim.claimed === 0 && claim.expected > 0) {
+    issue = "Missing Trip";
+    severity = "High";
+    action = "Investigate: trip not recorded";
+  }
+
+  // Unexpected Claim
+  else if (claim.expected === 0 && claim.claimed > 0) {
+    issue = "Unexpected Claim";
+    severity = "High";
+    action = "Verify legitimacy of trip";
+  }
+
+  // Overclaim
+  else if (claim.claimed > claim.expected + tolerance) {
+    issue = "Overclaim";
+    severity = "High";
+    action = "Investigate route and fare";
+  }
+
+  // Underclaim
+  else if (claim.claimed < claim.expected - tolerance) {
+    issue = "Underclaim";
+    severity = "Medium";
+    action = "Review fare discrepancy";
+  }
+
+  // Route mismatch (simple simulation)
+  else if (claim.route.includes("Client") && claim.expected === 300) {
+    issue = "Route Mismatch";
+    severity = "Medium";
+    action = "Check approved route";
+  }
+
+  return { issue, severity, action };
+}
+function renderTable() {
+  const tableBody = document.getElementById("table-body");
+  tableBody.innerHTML = "";
+
+  claims.forEach(claim => {
+  const result = analyzeClaim(claim);
+    const rowClass =
+  result.severity === "High" ? "high-row" :
+  result.severity === "Medium" ? "medium-row" : "low-row";
+
+const severityClass = result.severity.toLowerCase();
+
+    const row = `
+      <tr class="${rowClass}">
+        <td>${claim.employee}</td>
+        <td>${claim.route}</td>
+        <td>${claim.claimed}</td>
+        <td>${claim.expected}</td>
+<td>${result.issue}</td>
+<td class="${severityClass}">${result.severity}</td>
+<td>${result.action}</td>
+      </tr>
+    `;
+
+    tableBody.innerHTML += row;
+  });
+}
+function updateSummary() {
+  let high = 0;
+  let medium = 0;
+  let low = 0;
+
+  claims.forEach(claim => {
+    const result = analyzeClaim(claim);
+
+    if (result.severity === "High") high++;
+    else if (result.severity === "Medium") medium++;
+    else low++;
+  });
+
+  const total = claims.length;
+
+  document.getElementById("summary").innerHTML = `
+    <strong>Total Claims Reviewed:</strong> ${total} |
+    <span style="color:red;"><strong>High Risk:</strong> ${high}</span> |
+    <span style="color:orange;"><strong>Medium Risk:</strong> ${medium}</span> |
+    <span style="color:lightgreen;"><strong>Low Risk:</strong> ${low}</span>
+  `;
+}
+renderTable();
+updateSummary();
+</script>
+</body>
+</html>
