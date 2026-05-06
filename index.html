@@ -137,12 +137,16 @@ function analyzeClaim(claim) {
     action = "Review";
   }
 
-  // Rule 5: Route mismatch (overrides others if detected)
-  if (claim.route && claim.expectedRoute && claim.route !== claim.expectedRoute) {
-    issue = "Route Mismatch";
-    severity = "Medium";
-    action = "Review Route";
-  }
+  if (
+  claim.route &&
+  claim.expectedRoute &&
+  claim.route !== claim.expectedRoute &&
+  severity !== "High"
+) {
+  issue = "Route Mismatch";
+  severity = "Medium";
+  action = "Review Route";
+}
 
   return { issue, severity, action };
 }
@@ -187,10 +191,11 @@ function updateSummary() {
   });
 
   const total = claims.length;
+  const highPercent = ((high / total) * 100).toFixed(1);
 
   document.getElementById("summary").innerHTML = `
     <strong>Total Claims Reviewed:</strong> ${total} |
-    <span style="color:red;"><strong>High Risk:</strong> ${high}</span> |
+    <span style="color:red;"><strong>High Risk:</strong> ${high} (${highPercent}%)</span> |
     <span style="color:orange;"><strong>Medium Risk:</strong> ${medium}</span> |
     <span style="color:lightgreen;"><strong>Low Risk:</strong> ${low}</span>
   `;
