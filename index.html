@@ -49,6 +49,13 @@
 <tbody id="table-body"></tbody>
 </table>
 <script>
+  const expectedTrips = [
+  { employee: "Employee A", route: "Home → Office", expected: 300 },
+  { employee: "Employee B", route: "Office → Client", expected: 200 },
+  { employee: "Employee C", route: "Home → Office", expected: 300 },
+  { employee: "Employee D", route: "Home → Office", expected: 300 },
+  { employee: "Employee E", route: "Home → Office", expected: 300 } // 👈 missing entirely
+];
 const claims = [
   {
     employee: "Employee A",
@@ -137,53 +144,113 @@ function analyzeClaim(claim) {
     action = "Review";
   }
 
-  if (
+ if (
   claim.route &&
   claim.expectedRoute &&
-  claim.route !== claim.expectedRoute &&
-  severity !== "High"
+  claim.route !== claim.expectedRoute
 ) {
-  issue = "Route Mismatch";
-  severity = "Medium";
-  action = "Review Route";
-}
+  // If already high, append info instead of overwriting
+  if (severity === "High") {
+    issue += " + Route Mismatch";
+    action += " & Check route";
+  } else {
+    issue = "Route Mismatch";
+    severity = "Medium";
+    action = "Review Route";
+  }
+} 
 
   return { issue, severity, action };
+}
+  function findMissingTrips() {
+  const missing = [];
+
+  expectedTrips.forEach(expectedTrip => {
+    const found = claims.find(claim =>
+      claim.employee === expectedTrip.employee &&
+      claim.route === expectedTrip.route
+    );
+
+    if (!found) {
+      missing.push({
+        employee: expectedTrip.employee,
+        route: expectedTrip.route,
+        claimed: 0,
+        expected: expectedTrip.expected,
+        issue: "Missing Trip",
+        severity: "High",
+        action: "Investigate: no submission"
+      });
+    }
+  });
+
+  return missing;
 }
 function renderTable() {
   const tableBody = document.getElementById("table-body");
   tableBody.innerHTML = "";
 
   claims.forEach(claim => {
+  const allRows = [];
+
+// Normal claims
+claims.forEach(claim => {
   const result = analyzeClaim(claim);
-    const rowClass =
-  result.severity === "High" ? "high-row" :
-  result.severity === "Medium" ? "medium-row" : "low-row";
 
-const severityClass = result.severity.toLowerCase();
-
-    const row = `
-      <tr class="${rowClass}">
-        <td>${claim.employee}</td>
-        <td>${claim.route}</td>
-        <td>${claim.claimed}</td>
-        <td>${claim.expected}</td>
-<td>${result.issue}</td>
-<td class="${severityClass}">${result.severity}</td>
-<td>${result.action}</td>
-      </tr>
-    `;
-
-    tableBody.innerHTML += row;
+  allRows.push({
+    ...claim,
+    ...result
   });
+});
+
+// Missing trips
+const missingTrips = findMissingTrips();
+
+missingTrips.forEach(trip => {
+  allRows.push(trip);
+});
+
+// Render everything
+allRows.forEach(rowData => {
+  const rowClass =
+    rowData.severity === "High" ? "high-row" :
+    rowData.severity === "Medium" ? "medium-row" : "low-row";
+
+  const severityClass = rowData.severity.toLowerCase();
+
+  const row = `
+    <tr class="${rowClass}">
+      <td>${rowData.employee}</td>
+      <td>${rowData.route}</td>
+      <td>${rowData.claimed}</td>
+      <td>${rowData.expected}</td>
+      <td>${rowData.issue}</td>
+      <td class="${severityClass}">${rowData.severity}</td>
+      <td>${rowData.action}</td>
+    </tr>
+  `;
+
+  tableBody.innerHTML += row;
+});
 }
 function updateSummary() {
   let high = 0;
   let medium = 0;
   let low = 0;
 
-  claims.forEach(claim => {
-    const result = analyzeClaim(claim);
+  const allData = [];
+
+// Claims
+claims.forEach(claim => {
+  allData.push(analyzeClaim(claim));
+});
+
+// Missing trips
+findMissingTrips().forEach(trip => {
+  allData.push(trip);
+});
+
+allData.forEach(result => {
 
     if (result.severity === "High") high++;
     else if (result.severity === "Medium") medium++;
