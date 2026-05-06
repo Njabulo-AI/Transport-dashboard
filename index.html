@@ -101,45 +101,36 @@ function filterHighRisk() {
     : "Show High Risk Only";
 }
 function analyzeClaim(claim) {
-  const tolerance = 50;
-
-  let issue = "No Issue";
+  let issue = "OK";
   let severity = "Low";
   let action = "Approve";
 
-  // Missing Trip
-  if (claim.claimed === 0 && claim.expected > 0) {
-    issue = "Missing Trip";
+  // Rule 1: Missing trip (no expected value)
+  if (!claim.expected || claim.expected === 0) {
+    issue = "Unexpected Trip";
     severity = "High";
-    action = "Investigate: trip not recorded";
+    action = "Reject / Investigate";
   }
 
-  // Unexpected Claim
-  else if (claim.expected === 0 && claim.claimed > 0) {
-    issue = "Unexpected Claim";
-    severity = "High";
-    action = "Verify legitimacy of trip";
-  }
-
-  // Overclaim
-  else if (claim.claimed > claim.expected + tolerance) {
+  // Rule 2: Overclaim
+  else if (claim.claimed > claim.expected) {
     issue = "Overclaim";
     severity = "High";
-    action = "Investigate route and fare";
+    action = "Reject";
   }
 
-  // Underclaim
-  else if (claim.claimed < claim.expected - tolerance) {
+  // Rule 3: Underclaim (not dangerous but unusual)
+  else if (claim.claimed < claim.expected) {
     issue = "Underclaim";
-    severity = "Medium";
-    action = "Review fare discrepancy";
+    severity = "Low";
+    action = "Review";
   }
 
-  // Route mismatch (simple simulation)
-  else if (claim.route.includes("Client") && claim.expected === 300) {
+  // Rule 4: Route mismatch (simple version)
+  if (claim.route && claim.expectedRoute && claim.route !== claim.expectedRoute) {
     issue = "Route Mismatch";
     severity = "Medium";
-    action = "Check approved route";
+    action = "Review Route";
   }
 
   return { issue, severity, action };
