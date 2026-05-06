@@ -53,27 +53,31 @@ const claims = [
   {
     employee: "Employee A",
     route: "Home → Office",
+    expectedRoute: "Home → Office",
     claimed: 500,
     expected: 300
   },
   {
     employee: "Employee B",
     route: "Office → Client",
+    expectedRoute: "Office → Client",
     claimed: 0,
     expected: 200
   },
   {
     employee: "Employee C",
     route: "Home → Office",
+    expectedRoute: "Home → Office",
     claimed: 300,
     expected: 300
   },
-{
-  employee: "Employee D",
-  route: "Home → Client",
-  claimed: 150,
-  expected: 300
-}
+  {
+    employee: "Employee D",
+    route: "Home → Client",
+    expectedRoute: "Home → Office", // 👈 mismatch here
+    claimed: 150,
+    expected: 300
+  }
 ];
 let showingHighOnly = false;
 
@@ -105,28 +109,35 @@ function analyzeClaim(claim) {
   let severity = "Low";
   let action = "Approve";
 
-  // Rule 1: Missing trip (no expected value)
-  if (!claim.expected || claim.expected === 0) {
+  // Rule 1: Missing claim (expected but nothing claimed)
+  if (claim.expected > 0 && claim.claimed === 0) {
+    issue = "Missing Claim";
+    severity = "High";
+    action = "Investigate: trip not claimed";
+  }
+
+  // Rule 2: Unexpected trip (claimed but no expected route/fare)
+  else if (!claim.expected || claim.expected === 0) {
     issue = "Unexpected Trip";
     severity = "High";
     action = "Reject / Investigate";
   }
 
-  // Rule 2: Overclaim
+  // Rule 3: Overclaim
   else if (claim.claimed > claim.expected) {
     issue = "Overclaim";
     severity = "High";
     action = "Reject";
   }
 
-  // Rule 3: Underclaim (not dangerous but unusual)
+  // Rule 4: Underclaim
   else if (claim.claimed < claim.expected) {
     issue = "Underclaim";
     severity = "Low";
     action = "Review";
   }
 
-  // Rule 4: Route mismatch (simple version)
+  // Rule 5: Route mismatch (overrides others if detected)
   if (claim.route && claim.expectedRoute && claim.route !== claim.expectedRoute) {
     issue = "Route Mismatch";
     severity = "Medium";
