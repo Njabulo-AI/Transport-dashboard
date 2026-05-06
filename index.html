@@ -190,48 +190,45 @@ function renderTable() {
   const tableBody = document.getElementById("table-body");
   tableBody.innerHTML = "";
 
-  claims.forEach(claim => {
   const allRows = [];
 
-// Normal claims
-claims.forEach(claim => {
-  const result = analyzeClaim(claim);
-
-  allRows.push({
-    ...claim,
-    ...result
+  // Normal claims
+  claims.forEach(claim => {
+    const result = analyzeClaim(claim);
+    allRows.push({
+      ...claim,
+      ...result
+    });
   });
-});
 
-// Missing trips
-const missingTrips = findMissingTrips();
+  // Missing trips
+  const missingTrips = findMissingTrips();
+  missingTrips.forEach(trip => {
+    allRows.push(trip);
+  });
 
-missingTrips.forEach(trip => {
-  allRows.push(trip);
-});
+  // Render everything
+  allRows.forEach(rowData => {
+    const rowClass =
+      rowData.severity === "High" ? "high-row" :
+      rowData.severity === "Medium" ? "medium-row" : "low-row";
 
-// Render everything
-allRows.forEach(rowData => {
-  const rowClass =
-    rowData.severity === "High" ? "high-row" :
-    rowData.severity === "Medium" ? "medium-row" : "low-row";
+    const severityClass = rowData.severity.toLowerCase();
 
-  const severityClass = rowData.severity.toLowerCase();
+    const row = `
+      <tr class="${rowClass}">
+        <td>${rowData.employee}</td>
+        <td>${rowData.route}</td>
+        <td>${rowData.claimed}</td>
+        <td>${rowData.expected}</td>
+        <td>${rowData.issue}</td>
+        <td class="${severityClass}">${rowData.severity}</td>
+        <td>${rowData.action}</td>
+      </tr>
+    `;
 
-  const row = `
-    <tr class="${rowClass}">
-      <td>${rowData.employee}</td>
-      <td>${rowData.route}</td>
-      <td>${rowData.claimed}</td>
-      <td>${rowData.expected}</td>
-      <td>${rowData.issue}</td>
-      <td class="${severityClass}">${rowData.severity}</td>
-      <td>${rowData.action}</td>
-    </tr>
-  `;
-
-  tableBody.innerHTML += row;
-});
+    tableBody.innerHTML += row;
+  });
 }
 function updateSummary() {
   let high = 0;
@@ -257,7 +254,7 @@ allData.forEach(result => {
     else low++;
   });
 
-  const total = claims.length;
+  const total = allData.length;
   const highPercent = ((high / total) * 100).toFixed(1);
 
   document.getElementById("summary").innerHTML = `
