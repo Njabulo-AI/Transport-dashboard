@@ -25,8 +25,6 @@
 .high { color: red; font-weight: bold; background-color: #3f1d1d; }
 .medium { color: orange; font-weight: bold; background-color: #3f331d; }
 .low { color: lightgreen; font-weight: bold; background-color: #1d3f2a; }
-    .medium { color: orange; font-weight: bold; }
-    .low { color: lightgreen; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -44,6 +42,7 @@
     <th>Issue</th>
     <th>Severity</th>
     <th>Action</th>
+    <th>Source</th>
   </tr>
 
 <tbody id="table-body"></tbody>
@@ -96,9 +95,9 @@ function filterHighRisk() {
 
   rows.forEach(row => {
     if (showingHighOnly) {
-      if (!row.classList.contains("high-row")) {
-        row.style.display = "none";
-      }
+      if (!row.classList.contains("high")) {
+  row.style.display = "none";
+}
     } else {
       row.style.display = "";
     }
@@ -170,14 +169,15 @@ function analyzeClaim(claim) {
 
     if (!found) {
       missing.push({
-        employee: expectedTrip.employee,
-        route: expectedTrip.route,
-        claimed: 0,
-        expected: expectedTrip.expected,
-        issue: "Missing Trip",
-        severity: "High",
-        action: "Investigate: no submission"
-      });
+  employee: expectedTrip.employee,
+  route: expectedTrip.route,
+  claimed: 0,
+  expected: expectedTrip.expected,
+  issue: "Missing Trip",
+  severity: "High",
+  action: "Investigate: no submission",
+  source: "Expected Trips"
+});
     }
   });
 
@@ -193,9 +193,10 @@ function renderTable() {
   claims.forEach(claim => {
     const result = analyzeClaim(claim);
     allRows.push({
-      ...claim,
-      ...result
-    });
+  ...claim,
+  ...result,
+  source: "Claim Form"
+});
   });
 
   // Missing trips
@@ -205,24 +206,27 @@ function renderTable() {
   });
 
   // Render everything
+  allRows.sort((a, b) => {
+  const order = { High: 1, Medium: 2, Low: 3 };
+  return order[a.severity] - order[b.severity];
+});
   allRows.forEach(rowData => {
-    const rowClass =
-      rowData.severity === "High" ? "high-row" :
-      rowData.severity === "Medium" ? "medium-row" : "low-row";
+    const rowClass = rowData.severity.toLowerCase();
 
     const severityClass = rowData.severity.toLowerCase();
 
     const row = `
-      <tr class="${rowClass}">
-        <td>${rowData.employee}</td>
-        <td>${rowData.route}</td>
-        <td>${rowData.claimed}</td>
-        <td>${rowData.expected}</td>
-        <td>${rowData.issue}</td>
-        <td class="${severityClass}">${rowData.severity}</td>
-        <td>${rowData.action}</td>
-      </tr>
-    `;
+  <tr class="${rowClass}">
+    <td>${rowData.employee}</td>
+    <td>${rowData.route}</td>
+    <td>${rowData.claimed}</td>
+    <td>${rowData.expected}</td>
+    <td>${rowData.issue}</td>
+    <td class="${severityClass}">${rowData.severity}</td>
+    <td>${rowData.action}</td>
+    <td>${rowData.source || "System"}</td>
+  </tr>
+`;
 
     tableBody.innerHTML += row;
   });
