@@ -89,14 +89,12 @@ const claims = [
 let showingHighOnly = false;
 
 function filterHighRisk() {
-  const rows = document.querySelectorAll("table tr");
+  const rows = document.querySelectorAll("#table-body tr");
   const button = document.querySelector("button");
 
   showingHighOnly = !showingHighOnly;
 
-  rows.forEach((row, index) => {
-    if (index === 0) return;
-
+  rows.forEach(row => {
     if (showingHighOnly) {
       if (!row.classList.contains("high-row")) {
         row.style.display = "none";
@@ -106,7 +104,6 @@ function filterHighRisk() {
     }
   });
 
-  // 👇 Change button text
   button.textContent = showingHighOnly 
     ? "Show All Claims" 
     : "Show High Risk Only";
